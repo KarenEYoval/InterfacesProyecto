@@ -100,7 +100,6 @@ class TramitesUI:
     # ASISTENTE
     # =========================================================
     def iniciar_asistente(self):
-        # Solo detener si el hilo estaba activo
         if self.asistente.escuchando:
             self.asistente.detener()
 
@@ -111,14 +110,12 @@ class TramitesUI:
             "y título de suficiencia."
         )
 
-        # Esperar a que termine el saludo del login
         self.root.after(1200, lambda: (
             self.asistente.hablar(mensaje),
             self.root.after(2000, self.asistente.activar)
         ))
 
     def transcribir(self, texto):
-        """Mostrar texto capturado por el micrófono."""
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
     # =========================================================
@@ -140,8 +137,9 @@ class TramitesUI:
             self.seleccionar_tramite("Título de suficiencia")
             return
 
-        if "siguiente" in t or "continuar" in t:
+        if any(p in t for p in ["siguiente", "continuar", "adelante"]):
             self.avanzar_siguiente_pantalla()
+            return
 
     # =========================================================
     # SELECCIÓN DE TRÁMITE
@@ -152,6 +150,9 @@ class TramitesUI:
         self.actualizar_requisitos(tramite)
         self.leer_requisitos(tramite)
 
+    # =========================================================
+    # LEER REQUISITOS EN VOZ
+    # =========================================================
     def leer_requisitos(self, tramite):
         reqs = {
             "Alta de experiencia educativa": [
@@ -179,8 +180,11 @@ class TramitesUI:
         mensaje = f"Los requisitos para {tramite} son: " + ", ".join(reqs[tramite])
         self.asistente.hablar(mensaje)
 
+        # ⭐ REACTIVAR MICRÓFONO DESPUÉS DE HABLAR ⭐
+        self.root.after(500, self.asistente.activar)
+
     # =========================================================
-    # MOSTRAR REQUISITOS
+    # MOSTRAR REQUISITOS EN PANTALLA
     # =========================================================
     def actualizar_requisitos(self, tramite):
         for w in self.lista_req.winfo_children():
@@ -228,9 +232,9 @@ class TramitesUI:
             self.asistente.hablar(
                 "Por favor selecciona un trámite antes de continuar."
             )
+            self.root.after(500, self.asistente.activar)
             return
 
-        # APAGAR ASISTENTE
         if self.asistente.escuchando:
             self.asistente.detener()
 
@@ -239,7 +243,7 @@ class TramitesUI:
         )
 
         self.root.after(
-            300,
+            400,
             lambda: self.callback_navegar(
                 self.tramite_seleccionado, self.datos_usuario
             )

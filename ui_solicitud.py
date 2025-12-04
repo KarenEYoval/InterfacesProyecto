@@ -92,10 +92,17 @@ class SolicitudUI:
         tabla = tk.Frame(frame_materias, bg="white")
         tabla.pack()
 
-        tk.Label(tabla, text="NRC", width=20, borderwidth=1, relief="solid",
-                 font=("Arial", 11, "bold")).grid(row=0, column=0)
-        tk.Label(tabla, text="Nombre", width=40, borderwidth=1, relief="solid",
-                 font=("Arial", 11, "bold")).grid(row=0, column=1)
+        tk.Label(
+            tabla, text="NRC", width=20,
+            borderwidth=1, relief="solid",
+            font=("Arial", 11, "bold")
+        ).grid(row=0, column=0)
+
+        tk.Label(
+            tabla, text="Nombre", width=40,
+            borderwidth=1, relief="solid",
+            font=("Arial", 11, "bold")
+        ).grid(row=0, column=1)
 
         fila = 1
         for materia in self.datos.get("materias", []):
@@ -160,6 +167,7 @@ class SolicitudUI:
 
         # Activar asistente
         if self.asistente:
+            self.asistente.limpiar_callbacks()
             self.asistente.callback_transcripcion = self.transcribir
             self.asistente.callback_comando = self.procesar_comando
             root.after(800, self.iniciar_asistente)
@@ -177,7 +185,7 @@ class SolicitudUI:
             "Interfaces o Seguridad. Después di 'siguiente'."
         )
         self.asistente.hablar(mensaje)
-        self.asistente.activar()
+        self.root.after(600, self.asistente.activar)
 
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
@@ -185,6 +193,7 @@ class SolicitudUI:
     def procesar_comando(self, texto):
         t = texto.lower()
 
+        # Detectar materia
         if "base" in t:
             self.materia_var.set("Base de datos")
             self.on_seleccionar_materia()
@@ -205,18 +214,24 @@ class SolicitudUI:
             self.on_seleccionar_materia()
             return
 
-        if "siguiente" in t:
+        # Detectar "siguiente"
+        if any(p in t for p in [
+            "siguiente", "sigiente", "siguente",
+            "continuar", "adelante", "ok", "prosigue"
+        ]):
             self.confirmar_materia()
+            return
 
     # ======================================================
     # SELECCIÓN MATERIA
     # ======================================================
     def on_seleccionar_materia(self):
         self.materia_seleccionada = self.materia_var.get()
-        if self.asistente:
+        if self.asistente and self.materia_seleccionada:
             self.asistente.hablar(
                 f"Has seleccionado la materia {self.materia_seleccionada}."
             )
+            self.root.after(500, self.asistente.activar)
 
     # ======================================================
     # CONFIRMAR Y GENERAR PDF
@@ -229,13 +244,12 @@ class SolicitudUI:
                 self.asistente.hablar(
                     "Por favor indica qué materia quieres dar de alta."
                 )
+                self.root.after(500, self.asistente.activar)
             return
 
-        # ⛔ Apagar asistente antes de cambiar pantalla
-        try:
+        # Apagar asistente
+        if self.asistente and self.asistente.escuchando:
             self.asistente.detener()
-        except:
-            pass
 
         # Generar PDF
         nombre_pdf = f"alta_{self.datos['matricula']}.pdf"
@@ -260,6 +274,11 @@ class SolicitudUI:
     # VOLVER A MENÚ
     # ======================================================
     def volver_menu(self):
+        if self.asistente:
+            if self.asistente.escuchando:
+                self.asistente.detener()
+            self.asistente.limpiar_callbacks()
+
         for widget in self.root.winfo_children():
             widget.destroy()
 
