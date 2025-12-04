@@ -1,31 +1,31 @@
 import tkinter as tk
 
 
-class SolicitudUI:
+class BajaMateriaUI:
     def __init__(self, root, datos_usuario):
         self.root = root
         self.datos = datos_usuario
 
-        # Reusar el asistente de voz del root
+        # Reusar el asistente de voz
         self.asistente = getattr(root, "asistente", None)
 
-        root.title("Llenado de solicitud")
-        root.config(bg="white")
-
         self.materia_seleccionada = None
+
+        root.title("Solicitud de Baja de Experiencia Educativa")
+        root.config(bg="white")
 
         # ====== FRAME PRINCIPAL ======
         frame = tk.Frame(root, bg="white")
         frame.pack(fill="both", expand=True)
 
         # ====== BARRA SUPERIOR ======
-        barra = tk.Frame(frame, bg="#0057A3", height=70)
+        barra = tk.Frame(frame, bg="#A30000", height=70)
         barra.pack(fill="x")
         tk.Label(
             barra,
-            text="Llenado de solicitud",
+            text="Baja de experiencia educativa",
             font=("Arial", 24, "bold"),
-            bg="#0057A3",
+            bg="#A30000",
             fg="white"
         ).pack(pady=15)
 
@@ -33,7 +33,6 @@ class SolicitudUI:
         contenido = tk.Frame(frame, bg="white")
         contenido.pack(fill="both", expand=True, padx=30, pady=20)
 
-        # 2 columnas: datos alumno | datos academia+materia
         contenido.grid_columnconfigure(0, weight=1)
         contenido.grid_columnconfigure(1, weight=1)
 
@@ -43,7 +42,6 @@ class SolicitudUI:
             text="Datos del alumno",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         datos_alumno.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -52,16 +50,14 @@ class SolicitudUI:
             datos_alumno,
             text=f"Nombre del alumno(a):\n  {self.datos['nombre']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
         tk.Label(
             datos_alumno,
             text=f"Matrícula:\n  {self.datos['matricula']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
         # ---------- DATOS ACADEMIA ----------
@@ -70,7 +66,6 @@ class SolicitudUI:
             text="Datos de academia",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         datos_academia.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
@@ -79,17 +74,15 @@ class SolicitudUI:
             datos_academia,
             text=f"Carrera:\n  {self.datos['carrera']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
-        # ---------- MATERIAS DEL ALUMNO (TABLA) ----------
+        # ---------- MATERIAS INSCRITAS ----------
         frame_materias = tk.LabelFrame(
             contenido,
-            text="Materias registradas",
+            text="Materias inscritas",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         frame_materias.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
@@ -97,54 +90,44 @@ class SolicitudUI:
         tabla = tk.Frame(frame_materias, bg="white")
         tabla.pack()
 
-        tk.Label(
-            tabla, text="NRC", width=20,
-            borderwidth=1, relief="solid",
-            font=("Arial", 11, "bold")
-        ).grid(row=0, column=0)
-        tk.Label(
-            tabla, text="Nombre", width=40,
-            borderwidth=1, relief="solid",
-            font=("Arial", 11, "bold")
-        ).grid(row=0, column=1)
+        tk.Label(tabla, text="NRC", width=20, borderwidth=1, relief="solid",
+                 font=("Arial", 11, "bold")).grid(row=0, column=0)
+        tk.Label(tabla, text="Nombre", width=40, borderwidth=1, relief="solid",
+                 font=("Arial", 11, "bold")).grid(row=0, column=1)
 
         fila = 1
-        for materia in self.datos.get("materias", []):
+        for materia in self.datos["materias"]:
             tk.Label(
-                tabla, text=materia["nrc"], width=20,
-                borderwidth=1, relief="solid",
+                tabla, text=materia["nrc"],
+                width=20, borderwidth=1, relief="solid",
                 font=("Arial", 11)
             ).grid(row=fila, column=0)
+
             tk.Label(
-                tabla, text=materia["nombre"], width=40,
-                borderwidth=1, relief="solid",
+                tabla, text=materia["nombre"],
+                width=40, borderwidth=1, relief="solid",
                 font=("Arial", 11)
             ).grid(row=fila, column=1)
+
             fila += 1
 
-        # ---------- SELECCIÓN DE MATERIA A DAR DE ALTA ----------
-        frame_alta = tk.LabelFrame(
+        # ---------- SELECCIÓN DE MATERIA PARA DAR DE BAJA ----------
+        frame_baja = tk.LabelFrame(
             contenido,
-            text="Selecciona la materia que quieres dar de alta",
+            text="Selecciona la materia que deseas dar de baja",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
-        frame_alta.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+        frame_baja.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
 
         self.materia_var = tk.StringVar(value="")
 
-        opciones = [
-            "Base de datos",
-            "Integración de soluciones",
-            "Interfaces",
-            "Seguridad",
-        ]
+        materias_disponibles = [m["nombre"] for m in self.datos["materias"]]
 
-        for op in opciones:
+        for op in materias_disponibles:
             tk.Radiobutton(
-                frame_alta,
+                frame_baja,
                 text=op,
                 value=op,
                 variable=self.materia_var,
@@ -154,111 +137,94 @@ class SolicitudUI:
                 command=self.on_seleccionar_materia
             ).pack(anchor="w", pady=3)
 
-        # Mensaje informativo (texto que también podemos leer)
         self.label_info = tk.Label(
-            frame_alta,
-            text="Di en voz alta la materia o selecciónala y luego di 'siguiente'.",
+            frame_baja,
+            text="Puedes seleccionar con clic o decir el nombre en voz alta.\nDespués di 'siguiente' para confirmar.",
             font=("Arial", 11),
             bg="white",
             fg="gray"
         )
         self.label_info.pack(anchor="w", pady=(10, 0))
 
-        # BOTÓN SIGUIENTE
+        # ---------- BOTÓN SIGUIENTE ----------
         tk.Button(
             frame,
             text="Siguiente",
-            bg="#0057A3",
+            bg="#A30000",
             fg="white",
             font=("Arial", 14, "bold"),
             padx=20, pady=6,
-            command=self.confirmar_materia
+            command=self.confirmar_baja
         ).pack(pady=20)
 
-        # Label inferior para mostrar lo que se reconoce
+        # ---------- TEXTO DE TRANSCRIPCIÓN ----------
         self.transcripcion_lbl = tk.Label(
-            frame,
-            text="",
-            font=("Arial", 11),
-            bg="white",
-            fg="gray"
+            frame, text="", font=("Arial", 11), bg="white", fg="gray"
         )
         self.transcripcion_lbl.pack(pady=(0, 10))
 
-        # Iniciar asistente si existe
+        # ------ ACTIVAR ASISTENTE ------
         if self.asistente:
             self.asistente.callback_transcripcion = self.transcribir
             self.asistente.callback_comando = self.procesar_comando
             self.root.after(800, self.iniciar_asistente)
 
-    # ================== ASISTENTE: MENSAJE INICIAL ==================
+    # ===================== ASISTENTE =====================
     def iniciar_asistente(self):
         if not self.asistente:
             return
 
+        materias = ", ".join([m["nombre"] for m in self.datos["materias"]])
+
         mensaje = (
-            "Estamos en el llenado de solicitud. "
-            "¿Qué materia quieres dar de alta? "
-            "Puedes elegir: Base de datos, Integración de soluciones, "
-            "Interfaces o Seguridad. "
+            "Estamos en la solicitud de baja. "
+            "Puedes dar de baja cualquiera de tus materias actuales: "
+            f"{materias}. "
             "Después di la palabra 'siguiente' para confirmar."
         )
         self.asistente.hablar(mensaje)
         self.asistente.activar()
 
-    # ================== MOSTRAR TEXTO RECONOCIDO ==================
+    # =====================================================
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
-    # ================== PROCESAR COMANDOS DE VOZ ==================
+    # =====================================================
     def procesar_comando(self, texto):
         t = texto.lower()
 
-        # Selección por voz
-        if "base" in t and "dato" in t:
-            self.materia_var.set("Base de datos")
-            self.on_seleccionar_materia()
-            return
+        # Intentar seleccionar por voz
+        for materia in self.datos["materias"]:
+            nombre = materia["nombre"].lower()
+            if nombre.split()[0] in t or nombre in t:
+                self.materia_var.set(materia["nombre"])
+                self.on_seleccionar_materia()
+                return
 
-        if "integracion" in t or "integración" in t:
-            self.materia_var.set("Integración de soluciones")
-            self.on_seleccionar_materia()
-            return
-
-        if "interface" in t or "interfaces" in t:
-            self.materia_var.set("Interfaces")
-            self.on_seleccionar_materia()
-            return
-
-        if "seguridad" in t:
-            self.materia_var.set("Seguridad")
-            self.on_seleccionar_materia()
-            return
-
-        # Confirmación
+        # Confirmar baja
         if "siguiente" in t or "continuar" in t:
-            self.confirmar_materia()
+            self.confirmar_baja()
 
-    # ================== CUANDO SE ELIGE MATERIA (mouse o voz) ==================
+    # =====================================================
     def on_seleccionar_materia(self):
         self.materia_seleccionada = self.materia_var.get()
-        if self.asistente and self.materia_seleccionada:
+        if self.asistente:
             self.asistente.hablar(
-                f"Has seleccionado la materia {self.materia_seleccionada}."
+                f"Has seleccionado dar de baja {self.materia_seleccionada}."
             )
 
-    # ================== CONFIRMAR MATERIA ==================
-    def confirmar_materia(self):
+    # =====================================================
+    def confirmar_baja(self):
         materia = self.materia_var.get()
 
         if not materia:
             if self.asistente:
                 self.asistente.hablar(
-                    "Por favor indica qué materia quieres dar de alta antes de continuar."
+                    "Por favor selecciona qué materia deseas dar de baja."
                 )
             return
 
         if self.asistente:
-            self.asistente.hablar(f"Materia {materia} dada de alta.")
-        print(f"Materia dada de alta: {materia}")
-        # Aquí podrías luego navegar a otra pantalla o guardar en BD
+            self.asistente.hablar(f"Materia {materia} dada de baja correctamente.")
+
+        print(f"Materia dada de baja: {materia}")
