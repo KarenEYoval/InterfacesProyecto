@@ -9,152 +9,93 @@ class LoginUI:
         self.root = root
         self.callback_login = callback_login
 
-        root.title("Login")
-        root.geometry("900x600")
-        root.config(bg="#f4f4f4")
-
-        # Estado del flujo de voz
-        self.estado_voz = "inicio"
-
-        # Para recordar lo que dijo el usuario
-        self.usuario_voz = ""
-        self.contra_voz = ""
-
         self.frame = tk.Frame(root, bg="white")
         self.frame.pack(fill="both", expand=True)
 
         self.construir_ui()
 
-        # 🚀 ACTIVAR ASISTENTE AUTOMÁTICAMENTE AL INICIAR
-        root.after(1000, self.iniciar_asistente_auto)
+        # activar el asistente 1 segundo después
+        root.after(1000, self.iniciar_asistente)
 
     def construir_ui(self):
-        # COLUMNA IZQUIERDA
         izquierda = tk.Frame(self.frame, width=450, height=600)
         izquierda.pack(side="left", fill="both")
 
         img = Image.open("assets/login_bg.jpg")
         img = img.resize((450, 600))
-        self.img_tk = ImageTk.PhotoImage(img)
-        tk.Label(izquierda, image=self.img_tk).pack()
+        self.img = ImageTk.PhotoImage(img)
+        tk.Label(izquierda, image=self.img).pack()
 
-        # COLUMNA DERECHA
         derecha = tk.Frame(self.frame, bg="white")
         derecha.pack(side="right", fill="both", expand=True, padx=40)
 
-        tk.Label(
-            derecha,
-            text="Inicio sesión",
-            font=("Arial", 26, "bold"),
-            bg="white"
-        ).pack(pady=40)
+        tk.Label(derecha, text="Inicio de sesión",
+                 font=("Arial", 26, "bold"), bg="white").pack(pady=40)
 
-        # Usuario
-        tk.Label(
-            derecha,
-            text="Usuario",
-            font=("Arial", 14),
-            bg="white"
-        ).pack(anchor="w")
+        tk.Label(derecha, text="Usuario",
+                 font=("Arial", 14), bg="white").pack(anchor="w")
         self.ent_usuario = ttk.Entry(derecha, width=40)
         self.ent_usuario.pack()
 
-        # Contraseña
-        tk.Label(
-            derecha,
-            text="Contraseña",
-            font=("Arial", 14),
-            bg="white"
-        ).pack(anchor="w", pady=(20, 0))
+        tk.Label(derecha, text="Contraseña",
+                 font=("Arial", 14), bg="white").pack(anchor="w", pady=(20, 0))
         self.ent_contra = ttk.Entry(derecha, width=40, show="*")
         self.ent_contra.pack()
 
-        # Botón ingresar manual
-        ttk.Button(derecha, text="Ingresar", command=self.login).pack(pady=40)
+        ttk.Button(derecha, text="Ingresar",
+                   command=self.login_manual).pack(pady=40)
 
-        # Texto del asistente
         self.label_transcripcion = tk.Label(
-            derecha,
-            text="",
-            bg="white",
-            fg="gray"
-        )
+            derecha, text="", fg="gray", bg="white")
         self.label_transcripcion.pack()
 
-        # Inicializar asistente de voz
+        # instancia del asistente
         self.asistente = VozAsistente(
-            ui_callback_transcripcion=self.mostrar_transcripcion,
-            ui_callback_comando=self.procesar_comando
+            ui_callback_transcripcion=self.mostrar,
+            ui_callback_comando=self.procesar
         )
 
-    # ----------- ASISTENTE AUTOMÁTICO -----------
+        # 🔥 ESTA LÍNEA DEBE ESTAR DENTRO DE __init__
+        self.root.asistente = self.asistente
 
-    def iniciar_asistente_auto(self):
-        self.estado_voz = "pedir_usuario"
-        mensaje = "Bienvenido al login. Dime tu usuario."
+    # ACTIVAR ASISTENTE
+    def iniciar_asistente(self):
+        mensaje = (
+            "Bienvenido al login. "
+            "Dime tu usuario y contraseña juntos Por ejemplo: Karen uno dos tres."
+        )
         self.label_transcripcion.config(text=mensaje)
         self.asistente.hablar(mensaje)
-        self.asistente.activar()  # primera escucha
+        self.asistente.activar()
 
-    def mostrar_transcripcion(self, texto):
+    def mostrar(self, texto):
         self.label_transcripcion.config(text=f"Escuchando: {texto}")
 
-    # ----------- MANEJO DE COMANDOS DE VOZ -----------
+    # PROCESAR COMANDO DE UNA VEZ
+    def procesar(self, texto):
+        partes = texto.split()
 
-    def procesar_comando(self, texto):
-        print("DEBUG procesar_comando -> estado:", self.estado_voz, "| texto:", texto)
-        texto = texto.strip()
-
-        # 1️⃣ PEDIR USUARIO
-        if self.estado_voz == "pedir_usuario":
-
-            self.usuario_voz = texto
-            self.ent_usuario.delete(0, tk.END)
-            self.ent_usuario.insert(0, self.usuario_voz)
-
-            mensaje = (
-                f"Perfecto. De usuario dijiste: {self.usuario_voz}. "
-                f"Ahora dime tu contraseña."
-            )
-            self.label_transcripcion.config(text=mensaje)
-            self.asistente.hablar(mensaje)
-
-            # Cambiar a siguiente estado
-            self.estado_voz = "pedir_contra"
-
-            # Volver a escuchar después de hablar
-            self.root.after(1200, self.asistente.activar)
+        if len(partes) < 2:
+            self.asistente.hablar("Por favor di usuario y contraseña juntos.")
             return
 
-        # 2️⃣ PEDIR CONTRASEÑA
-        if self.estado_voz == "pedir_contra":
+        usuario = partes[0]
+        contrasena = " ".join(partes[1:])
 
-            self.contra_voz = texto
-            self.ent_contra.delete(0, tk.END)
-            self.ent_contra.insert(0, self.contra_voz)
+        # llenar campos
+        self.ent_usuario.delete(0, tk.END)
+        self.ent_usuario.insert(0, usuario)
 
-            mensaje = (
-                f"Perfecto. De usuario dijiste: {self.usuario_voz}. "
-                f"De contraseña dijiste: {self.contra_voz}. "
-                f"Ingresando ahora."
-            )
-            self.label_transcripcion.config(text=mensaje)
-            self.asistente.hablar(mensaje)
+        self.ent_contra.delete(0, tk.END)
+        self.ent_contra.insert(0, contrasena)
 
-            # Guardar datos ANTES de destruir ventana
-            usuario = self.usuario_voz
-            rol = "estudiante"
+        # confirmación
+        self.asistente.hablar("Datos recibidos. Ingresando ahora.")
 
-            # Esperar que termine de hablar y luego cambiar pantalla
-            self.root.after(2000, lambda: self.callback_login(usuario, rol))
-            return
+        # pasar a trámites
+        self.root.after(1500, lambda: self.callback_login(
+            usuario, "estudiante"))
 
-        # Si llega aquí inesperadamente
-        self.label_transcripcion.config(text=f"No esperaba esto: {texto}")
-
-    # ----------- LOGIN MANUAL (BOTÓN) -----------
-
-    def login(self):
+    def login_manual(self):
         usuario = self.ent_usuario.get()
-        rol = "estudiante"
-        self.callback_login(usuario, rol)
+        self.callback_login(usuario, "estudiante")

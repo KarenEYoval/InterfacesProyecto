@@ -13,29 +13,27 @@ root.title("Sistema de Trámites")
 def navegar_tramites(destino):
     print("Destino solicitado:", destino)
 
-    # Puedes agregar más pantallas si quieres aquí:
-    # if destino == "estado": ...
-    # if destino == "historial": ...
-
     if destino == "inicio":
         # Volver al login
         for widget in root.winfo_children():
             widget.destroy()
-        LoginUI(root, mostrar_pantalla_tramites)
+        LoginUI(root, callback_login=mostrar_pantalla_tramites)
 
 
 # ----------------------------------------------
-# ESTA FUNCIÓN RECIBE usuario Y rol DESDE LoginUI
+# ESTO SE EJECUTA DESPUÉS DEL LOGIN
 # ----------------------------------------------
 def mostrar_pantalla_tramites(usuario, rol):
-    print("Login exitoso:", usuario, rol)
 
-    # LIMPIAR LOGIN
+    # detener escucha del login
+    if hasattr(root, "asistente"):
+        root.asistente.detener()
+
     for widget in root.winfo_children():
         widget.destroy()
 
-    # CREAR PANTALLA DE TRÁMITES
-    TramitesUI(root, callback_navegar=navegar_tramites)
+    # ✔ AGREGAR LA NAVEGACIÓN CORRECTA
+    TramitesUI(root, navegar_tramites)
 
 
 # ----------------------------------------------
