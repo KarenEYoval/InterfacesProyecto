@@ -60,10 +60,14 @@ class TramitesUI:
                 command=lambda: self.seleccionar_tramite(valor)
             )
 
-        crear_boton("Alta de experiencia educativa", "Alta de experiencia educativa").pack(pady=5)
-        crear_boton("Baja de experiencia educativa", "Baja de experiencia educativa").pack(pady=5)
-        crear_boton("Examen extraordinario", "Examen extraordinario").pack(pady=5)
-        crear_boton("Título de suficiencia", "Título de suficiencia").pack(pady=5)
+        crear_boton("Alta de experiencia educativa",
+                    "Alta de experiencia educativa").pack(pady=5)
+        crear_boton("Baja de experiencia educativa",
+                    "Baja de experiencia educativa").pack(pady=5)
+        crear_boton("Examen extraordinario",
+                    "Examen extraordinario").pack(pady=5)
+        crear_boton("Título de suficiencia",
+                    "Título de suficiencia").pack(pady=5)
 
         # ------------------------------------------------------
         # REQUISITOS
@@ -96,17 +100,25 @@ class TramitesUI:
     # ASISTENTE
     # =========================================================
     def iniciar_asistente(self):
-        self.asistente.detener()
+        # Solo detener si el hilo estaba activo
+        if self.asistente.escuchando:
+            self.asistente.detener()
+
         mensaje = (
             "Bienvenido a la ventana de trámites. "
             "Las opciones disponibles son: alta de experiencia educativa, "
             "baja de experiencia educativa, examen extraordinario "
             "y título de suficiencia."
         )
-        self.asistente.hablar(mensaje)
-        self.asistente.activar()
+
+        # Esperar a que termine el saludo del login
+        self.root.after(1200, lambda: (
+            self.asistente.hablar(mensaje),
+            self.root.after(2000, self.asistente.activar)
+        ))
 
     def transcribir(self, texto):
+        """Mostrar texto capturado por el micrófono."""
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
     # =========================================================
@@ -168,7 +180,7 @@ class TramitesUI:
         self.asistente.hablar(mensaje)
 
     # =========================================================
-    # MOSTRAR REQUISITOS EN PANTALLA
+    # MOSTRAR REQUISITOS
     # =========================================================
     def actualizar_requisitos(self, tramite):
         for w in self.lista_req.winfo_children():
@@ -219,16 +231,13 @@ class TramitesUI:
             return
 
         # APAGAR ASISTENTE
-        try:
+        if self.asistente.escuchando:
             self.asistente.detener()
-        except:
-            pass
 
         self.asistente.hablar(
             f"Abriendo el formulario de {self.tramite_seleccionado}."
         )
 
-        # NAVEGAR A LA SIGUIENTE PANTALLA
         self.root.after(
             300,
             lambda: self.callback_navegar(
