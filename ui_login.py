@@ -107,10 +107,8 @@ class LoginUI:
 
         # 1️⃣ PEDIR USUARIO
         if self.estado_voz == "pedir_usuario":
-            # Guardamos lo que dijo como usuario
-            self.usuario_voz = texto
 
-            # Lo ponemos en el campo de usuario
+            self.usuario_voz = texto
             self.ent_usuario.delete(0, tk.END)
             self.ent_usuario.insert(0, self.usuario_voz)
 
@@ -121,23 +119,20 @@ class LoginUI:
             self.label_transcripcion.config(text=mensaje)
             self.asistente.hablar(mensaje)
 
-            # Pasamos a pedir contraseña
+            # Cambiar a siguiente estado
             self.estado_voz = "pedir_contra"
 
             # Volver a escuchar después de hablar
-            self.root.after(1000, self.asistente.activar)
+            self.root.after(1200, self.asistente.activar)
             return
 
         # 2️⃣ PEDIR CONTRASEÑA
         if self.estado_voz == "pedir_contra":
-            # Guardamos lo que dijo como contraseña
-            self.contra_voz = texto
 
-            # Lo ponemos en el campo de contraseña
+            self.contra_voz = texto
             self.ent_contra.delete(0, tk.END)
             self.ent_contra.insert(0, self.contra_voz)
 
-            # 👉 Aquí repite usuario Y contraseña
             mensaje = (
                 f"Perfecto. De usuario dijiste: {self.usuario_voz}. "
                 f"De contraseña dijiste: {self.contra_voz}. "
@@ -146,19 +141,20 @@ class LoginUI:
             self.label_transcripcion.config(text=mensaje)
             self.asistente.hablar(mensaje)
 
-            self.estado_voz = "finalizar"
-            self.login()
+            # Guardar datos ANTES de destruir ventana
+            usuario = self.usuario_voz
+            rol = "estudiante"
+
+            # Esperar que termine de hablar y luego cambiar pantalla
+            self.root.after(2000, lambda: self.callback_login(usuario, rol))
             return
 
-        # Cualquier otro estado inesperado
+        # Si llega aquí inesperadamente
         self.label_transcripcion.config(text=f"No esperaba esto: {texto}")
 
-    # ----------- LOGIN NORMAL -----------
+    # ----------- LOGIN MANUAL (BOTÓN) -----------
 
     def login(self):
         usuario = self.ent_usuario.get()
-        contra = self.ent_contra.get()
-
-        rol = "estudiante"  # Simulado
-
+        rol = "estudiante"
         self.callback_login(usuario, rol)
