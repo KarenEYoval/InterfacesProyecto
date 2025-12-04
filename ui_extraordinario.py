@@ -84,7 +84,7 @@ class ExtraordinarioUI:
 
         self.info = tk.Label(
             frame_materias,
-            text="Puedes seleccionar con clic o por voz.\nDi: 'extraordinario en ___'.",
+            text="Puedes seleccionar con clic o por voz.\nDi: 'extraordinario en ...'.",
             bg="white", fg="gray", font=("Arial", 10)
         )
         self.info.pack(anchor="w", pady=5)
@@ -106,22 +106,30 @@ class ExtraordinarioUI:
 
         # ---------- ASISTENTE ----------
         if self.asistente:
+            # limpiar callbacks anteriores
+            if hasattr(self.asistente, "limpiar_callbacks"):
+                self.asistente.limpiar_callbacks()
             self.asistente.callback_transcripcion = self.transcribir
             self.asistente.callback_comando = self.procesar_comando
             root.after(800, self.iniciar_asistente)
 
     # ====================================================
+    # ASISTENTE
+    # ====================================================
     def iniciar_asistente(self):
+        if not self.asistente:
+            return
+
         materias = ", ".join([m["nombre"] for m in self.datos["materias"]])
         mensaje = (
             "Solicitud de examen extraordinario. "
             "Puedes elegir alguna de tus materias actuales: "
-            f"{materias}. Para seleccionar, di el nombre. "
+            f"{materias}. Para seleccionar, di el nombre de la materia. "
             "Después di 'siguiente' para continuar."
         )
 
         self.asistente.hablar(mensaje)
-        self.asistente.activar()
+        self.root.after(500, self.asistente.activar)
 
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
@@ -131,34 +139,40 @@ class ExtraordinarioUI:
 
         # Detectar materia por voz
         for m in self.datos["materias"]:
-            if m["nombre"].lower().split()[0] in t:
+            nombre = m["nombre"].lower()
+            if nombre in t or nombre.split()[0] in t:
                 self.materia_var.set(m["nombre"])
                 self.on_materia()
                 return
 
-        if "siguiente" in t:
+        # Detectar 'siguiente'
+        if any(p in t for p in ["siguiente", "continuar", "adelante"]):
             self.confirmar_extra()
+            return
 
     def on_materia(self):
         self.materia_seleccionada = self.materia_var.get()
-        if self.asistente:
+        if self.asistente and self.materia_seleccionada:
             self.asistente.hablar(f"Has seleccionado {self.materia_seleccionada}.")
+            self.root.after(500, self.asistente.activar)
 
     # ====================================================
+    # CONFIRMAR EXTRAORDINARIO
+    # ====================================================
     def confirmar_extra(self):
-        if not self.materia_var.get():
-            self.asistente.hablar("Selecciona una materia primero.")
-            return
-        try:
-            self.asistente.detener()
-        except:
-            pass
-
         materia = self.materia_var.get()
+        if not materia:
+            if self.asistente:
+                self.asistente.hablar("Selecciona una materia primero.")
+                self.root.after(500, self.asistente.activar)
+            return
+
+        if self.asistente and self.asistente.escuchando:
+            self.asistente.detener()
+
         tramite = "Examen Extraordinario"
 
-        # Generar PDF
-        archivo = generar_pdf(
+        generar_pdf(
             nombre_archivo=f"extraordinario_{self.datos['matricula']}.pdf",
             titulo="SOLICITUD DE EXAMEN EXTRAORDINARIO",
             datos_alumno=self.datos,
@@ -166,16 +180,11 @@ class ExtraordinarioUI:
             materia=materia
         )
 
-        self.asistente.hablar(
-            f"Examen extraordinario para {materia} registrado. "
-            "Tu comprobante en PDF ha sido generado."
-        )
+        if self.asistente:
+            self.asistente.hablar(
+                f"Examen extraordinario para {materia} registrado. "
+                "Tu comprobante en PDF ha sido generado. Adios"
+            )
 
-        # Regresar al menú principal
         self.root.after(2000, self.volver_menu)
 
-    # ====================================================
-    def volver_menu(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        TramitesUI(self.root, lambda *args: None, self.datos)

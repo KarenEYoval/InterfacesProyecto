@@ -8,7 +8,7 @@ class BajaMateriaUI:
         self.root = root
         self.datos = datos_usuario
 
-        # Reusar el asistente de voz
+        # Reusar asistente
         self.asistente = getattr(root, "asistente", None)
 
         self.materia_seleccionada = None
@@ -16,11 +16,11 @@ class BajaMateriaUI:
         root.title("Solicitud de Baja de Experiencia Educativa")
         root.config(bg="white")
 
-        # ====== FRAME PRINCIPAL ======
+        # ===== FRAME PRINCIPAL =====
         frame = tk.Frame(root, bg="white")
         frame.pack(fill="both", expand=True)
 
-        # ====== BARRA SUPERIOR ======
+        # ===== BARRA SUPERIOR =====
         barra = tk.Frame(frame, bg="#A30000", height=70)
         barra.pack(fill="x")
         tk.Label(
@@ -31,7 +31,7 @@ class BajaMateriaUI:
             fg="white"
         ).pack(pady=15)
 
-        # ====== CONTENIDO ======
+        # ===== CONTENIDO =====
         contenido = tk.Frame(frame, bg="white")
         contenido.pack(fill="both", expand=True, padx=30, pady=20)
 
@@ -113,7 +113,7 @@ class BajaMateriaUI:
 
             fila += 1
 
-        # ---------- SELECCIÓN DE MATERIA PARA DAR DE BAJA ----------
+        # ---------- SELECCIÓN DE MATERIA ----------
         frame_baja = tk.LabelFrame(
             contenido,
             text="Selecciona la materia que deseas dar de baja",
@@ -159,19 +159,21 @@ class BajaMateriaUI:
             command=self.confirmar_baja
         ).pack(pady=20)
 
-        # ---------- TEXTO DE TRANSCRIPCIÓN ----------
+        # ---------- TRANSCRIPCIÓN ----------
         self.transcripcion_lbl = tk.Label(
             frame, text="", font=("Arial", 11), bg="white", fg="gray"
         )
-        self.transcripcion_lbl.pack(pady=(0, 10))
+        self.transcripcion_lbl.pack()
 
-        # ------ ACTIVAR ASISTENTE ------
+        # ---------- ACTIVAR ASISTENTE ----------
         if self.asistente:
             self.asistente.callback_transcripcion = self.transcribir
             self.asistente.callback_comando = self.procesar_comando
             self.root.after(800, self.iniciar_asistente)
 
-    # ===================== ASISTENTE =====================
+    # ======================================
+    # ASISTENTE
+    # ======================================
     def iniciar_asistente(self):
         if not self.asistente:
             return
@@ -179,13 +181,11 @@ class BajaMateriaUI:
         materias = ", ".join([m["nombre"] for m in self.datos["materias"]])
 
         mensaje = (
-            "Estamos en la solicitud de baja. "
-            "Puedes dar de baja cualquiera de tus materias actuales: "
-            f"{materias}. "
-            "Después di la palabra 'siguiente' para confirmar."
+            "Estamos en la solicitud de baja. Puedes dar de baja cualquiera de tus materias actuales: "
+            f"{materias}. Después di 'siguiente' para confirmar."
         )
         self.asistente.hablar(mensaje)
-        self.asistente.activar()
+        self.root.after(500, self.asistente.activar)
 
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
@@ -193,15 +193,18 @@ class BajaMateriaUI:
     def procesar_comando(self, texto):
         t = texto.lower()
 
+        # detectar materia por voz
         for materia in self.datos["materias"]:
             nombre = materia["nombre"].lower()
-            if nombre.split()[0] in t or nombre in t:
+            if nombre in t:
                 self.materia_var.set(materia["nombre"])
                 self.on_seleccionar_materia()
                 return
 
-        if "siguiente" in t or "continuar" in t:
+        # detectar "siguiente"
+        if any(word in t for word in ["siguiente", "continuar", "adelante"]):
             self.confirmar_baja()
+            return
 
     def on_seleccionar_materia(self):
         self.materia_seleccionada = self.materia_var.get()
@@ -209,22 +212,22 @@ class BajaMateriaUI:
             self.asistente.hablar(
                 f"Has seleccionado dar de baja {self.materia_seleccionada}."
             )
+            self.root.after(500, self.asistente.activar)
 
-    # ====================== CONFIRMAR ======================
+    # ======================================
+    # CONFIRMAR BAJA
+    # ======================================
     def confirmar_baja(self):
         materia = self.materia_var.get()
 
         if not materia:
             self.asistente.hablar("Selecciona una materia primero.")
+            self.root.after(500, self.asistente.activar)
             return
 
-        # 🔵 Detener asistente antes de cambiar
-        try:
+        if self.asistente.escuchando:
             self.asistente.detener()
-        except:
-            pass
 
-        # Generar PDF
         generar_pdf(
             nombre_archivo=f"baja_{self.datos['matricula']}.pdf",
             titulo="SOLICITUD DE BAJA DE EXPERIENCIA EDUCATIVA",
@@ -237,7 +240,9 @@ class BajaMateriaUI:
 
         self.root.after(1500, self.volver_menu)
 
-    # ====================== VOLVER MENÚ ======================
+    # ======================================
+    # VOLVER AL MENÚ
+    # ======================================
     def volver_menu(self):
         for widget in self.root.winfo_children():
             widget.destroy()
