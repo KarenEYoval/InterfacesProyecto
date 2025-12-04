@@ -8,17 +8,38 @@ class VozAsistente:
         self.callback_comando = ui_callback_comando
         self.escuchando = False
 
-        # Motor de voz (si lo necesitas luego)
+        # Motor de voz
         self.engine = pyttsx3.init()
 
+        # Arreglo para que funcione la voz en Windows
+        voices = self.engine.getProperty('voices')
+        self.engine.setProperty('voice', voices[0].id)
+        self.engine.setProperty('rate', 170)
+
+    # ----------------- HABLAR -----------------
+
     def hablar(self, texto):
-        self.engine.say(texto)
-        self.engine.runAndWait()
+        try:
+            print("Asistente dice:", texto)
+            self.engine.say(texto)
+            self.engine.runAndWait()
+        except Exception as e:
+            print("ERROR hablando:", e)
+
+    # ----------------- ACTIVAR ASISTENTE -----------------
 
     def activar(self):
-        """Activa el reconocimiento sin decir nada."""
+        """Activa micrófono + habla el mensaje inicial"""
+        try:
+            self.hablar("Bienvenido al login. Dime tu usuario.")
+        except:
+            print("No se pudo reproducir voz")
+
         self.escuchando = True
-        threading.Thread(target=self.escuchar, daemon=True).start()
+        hilo = threading.Thread(target=self.escuchar, daemon=True)
+        hilo.start()
+
+    # ----------------- ESCUCHAR -----------------
 
     def escuchar(self):
         r = sr.Recognizer()
@@ -30,10 +51,8 @@ class VozAsistente:
 
                 texto = r.recognize_google(audio, language="es-MX")
 
-                # Mostrar transcripción en pantalla
+                # Mandarlo a la UI
                 self.callback_transcripcion(texto)
-
-                # Enviar comando al LoginUI
                 self.callback_comando(texto)
 
             except Exception:
