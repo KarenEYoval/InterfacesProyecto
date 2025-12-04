@@ -1,4 +1,6 @@
 import tkinter as tk
+from utilidades_pdf import generar_pdf
+from ui_tramites import TramitesUI
 
 
 class SolicitudUI:
@@ -6,7 +8,7 @@ class SolicitudUI:
         self.root = root
         self.datos = datos_usuario
 
-        # Reusar el asistente de voz del root
+        # Reusar asistente
         self.asistente = getattr(root, "asistente", None)
 
         root.title("Llenado de solicitud")
@@ -14,11 +16,11 @@ class SolicitudUI:
 
         self.materia_seleccionada = None
 
-        # ====== FRAME PRINCIPAL ======
+        # ===== FRAME PRINCIPAL =====
         frame = tk.Frame(root, bg="white")
         frame.pack(fill="both", expand=True)
 
-        # ====== BARRA SUPERIOR ======
+        # ===== BARRA SUPERIOR =====
         barra = tk.Frame(frame, bg="#0057A3", height=70)
         barra.pack(fill="x")
         tk.Label(
@@ -29,11 +31,10 @@ class SolicitudUI:
             fg="white"
         ).pack(pady=15)
 
-        # ====== CONTENIDO ======
+        # ===== CONTENIDO =====
         contenido = tk.Frame(frame, bg="white")
         contenido.pack(fill="both", expand=True, padx=30, pady=20)
 
-        # 2 columnas: datos alumno | datos academia+materia
         contenido.grid_columnconfigure(0, weight=1)
         contenido.grid_columnconfigure(1, weight=1)
 
@@ -43,7 +44,6 @@ class SolicitudUI:
             text="Datos del alumno",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         datos_alumno.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -52,16 +52,14 @@ class SolicitudUI:
             datos_alumno,
             text=f"Nombre del alumno(a):\n  {self.datos['nombre']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
         tk.Label(
             datos_alumno,
             text=f"Matrícula:\n  {self.datos['matricula']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
         # ---------- DATOS ACADEMIA ----------
@@ -70,7 +68,6 @@ class SolicitudUI:
             text="Datos de academia",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         datos_academia.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
@@ -79,17 +76,15 @@ class SolicitudUI:
             datos_academia,
             text=f"Carrera:\n  {self.datos['carrera']}",
             font=("Arial", 12),
-            bg="white",
-            justify="left"
+            bg="white"
         ).pack(anchor="w", pady=5)
 
-        # ---------- MATERIAS DEL ALUMNO (TABLA) ----------
+        # ---------- MATERIAS DEL ALUMNO ----------
         frame_materias = tk.LabelFrame(
             contenido,
             text="Materias registradas",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         frame_materias.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
@@ -97,38 +92,29 @@ class SolicitudUI:
         tabla = tk.Frame(frame_materias, bg="white")
         tabla.pack()
 
-        tk.Label(
-            tabla, text="NRC", width=20,
-            borderwidth=1, relief="solid",
-            font=("Arial", 11, "bold")
-        ).grid(row=0, column=0)
-        tk.Label(
-            tabla, text="Nombre", width=40,
-            borderwidth=1, relief="solid",
-            font=("Arial", 11, "bold")
-        ).grid(row=0, column=1)
+        tk.Label(tabla, text="NRC", width=20, borderwidth=1, relief="solid",
+                 font=("Arial", 11, "bold")).grid(row=0, column=0)
+        tk.Label(tabla, text="Nombre", width=40, borderwidth=1, relief="solid",
+                 font=("Arial", 11, "bold")).grid(row=0, column=1)
 
         fila = 1
         for materia in self.datos.get("materias", []):
             tk.Label(
                 tabla, text=materia["nrc"], width=20,
-                borderwidth=1, relief="solid",
-                font=("Arial", 11)
+                borderwidth=1, relief="solid", font=("Arial", 11)
             ).grid(row=fila, column=0)
             tk.Label(
                 tabla, text=materia["nombre"], width=40,
-                borderwidth=1, relief="solid",
-                font=("Arial", 11)
+                borderwidth=1, relief="solid", font=("Arial", 11)
             ).grid(row=fila, column=1)
             fila += 1
 
-        # ---------- SELECCIÓN DE MATERIA A DAR DE ALTA ----------
+        # ---------- SELECCIÓN DE MATERIA ----------
         frame_alta = tk.LabelFrame(
             contenido,
             text="Selecciona la materia que quieres dar de alta",
             bg="white",
             font=("Arial", 14, "bold"),
-            fg="black",
             padx=10, pady=10
         )
         frame_alta.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
@@ -139,83 +125,67 @@ class SolicitudUI:
             "Base de datos",
             "Integración de soluciones",
             "Interfaces",
-            "Seguridad",
+            "Seguridad"
         ]
 
         for op in opciones:
             tk.Radiobutton(
-                frame_alta,
-                text=op,
-                value=op,
-                variable=self.materia_var,
-                bg="white",
-                font=("Arial", 12),
-                anchor="w",
+                frame_alta, text=op, value=op,
+                variable=self.materia_var, bg="white",
+                font=("Arial", 12), anchor="w",
                 command=self.on_seleccionar_materia
             ).pack(anchor="w", pady=3)
 
-        # Mensaje informativo (texto que también podemos leer)
-        self.label_info = tk.Label(
+        tk.Label(
             frame_alta,
-            text="Di en voz alta la materia o selecciónala y luego di 'siguiente'.",
-            font=("Arial", 11),
-            bg="white",
-            fg="gray"
-        )
-        self.label_info.pack(anchor="w", pady=(10, 0))
+            text="Di la materia o selecciónala y luego di 'siguiente'.",
+            font=("Arial", 11), bg="white", fg="gray"
+        ).pack(anchor="w", pady=5)
 
         # BOTÓN SIGUIENTE
         tk.Button(
             frame,
             text="Siguiente",
-            bg="#0057A3",
-            fg="white",
+            bg="#0057A3", fg="white",
             font=("Arial", 14, "bold"),
             padx=20, pady=6,
             command=self.confirmar_materia
         ).pack(pady=20)
 
-        # Label inferior para mostrar lo que se reconoce
+        # Transcripción
         self.transcripcion_lbl = tk.Label(
-            frame,
-            text="",
-            font=("Arial", 11),
-            bg="white",
-            fg="gray"
+            frame, text="", font=("Arial", 11), bg="white", fg="gray"
         )
-        self.transcripcion_lbl.pack(pady=(0, 10))
+        self.transcripcion_lbl.pack()
 
-        # Iniciar asistente si existe
+        # Activar asistente
         if self.asistente:
             self.asistente.callback_transcripcion = self.transcribir
             self.asistente.callback_comando = self.procesar_comando
-            self.root.after(800, self.iniciar_asistente)
+            root.after(800, self.iniciar_asistente)
 
-    # ================== ASISTENTE: MENSAJE INICIAL ==================
+    # ======================================================
+    # ASISTENTE DE VOZ
+    # ======================================================
     def iniciar_asistente(self):
         if not self.asistente:
             return
 
         mensaje = (
-            "Estamos en el llenado de solicitud. "
             "¿Qué materia quieres dar de alta? "
             "Puedes elegir: Base de datos, Integración de soluciones, "
-            "Interfaces o Seguridad. "
-            "Después di la palabra 'siguiente' para confirmar."
+            "Interfaces o Seguridad. Después di 'siguiente'."
         )
         self.asistente.hablar(mensaje)
         self.asistente.activar()
 
-    # ================== MOSTRAR TEXTO RECONOCIDO ==================
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
-    # ================== PROCESAR COMANDOS DE VOZ ==================
     def procesar_comando(self, texto):
         t = texto.lower()
 
-        # Selección por voz
-        if "base" in t and "dato" in t:
+        if "base" in t:
             self.materia_var.set("Base de datos")
             self.on_seleccionar_materia()
             return
@@ -235,30 +205,62 @@ class SolicitudUI:
             self.on_seleccionar_materia()
             return
 
-        # Confirmación
-        if "siguiente" in t or "continuar" in t:
+        if "siguiente" in t:
             self.confirmar_materia()
 
-    # ================== CUANDO SE ELIGE MATERIA (mouse o voz) ==================
+    # ======================================================
+    # SELECCIÓN MATERIA
+    # ======================================================
     def on_seleccionar_materia(self):
         self.materia_seleccionada = self.materia_var.get()
-        if self.asistente and self.materia_seleccionada:
+        if self.asistente:
             self.asistente.hablar(
                 f"Has seleccionado la materia {self.materia_seleccionada}."
             )
 
-    # ================== CONFIRMAR MATERIA ==================
+    # ======================================================
+    # CONFIRMAR Y GENERAR PDF
+    # ======================================================
     def confirmar_materia(self):
         materia = self.materia_var.get()
 
         if not materia:
             if self.asistente:
                 self.asistente.hablar(
-                    "Por favor indica qué materia quieres dar de alta antes de continuar."
+                    "Por favor indica qué materia quieres dar de alta."
                 )
             return
 
+        # ⛔ Apagar asistente antes de cambiar pantalla
+        try:
+            self.asistente.detener()
+        except:
+            pass
+
+        # Generar PDF
+        nombre_pdf = f"alta_{self.datos['matricula']}.pdf"
+        generar_pdf(
+            nombre_archivo=nombre_pdf,
+            titulo="SOLICITUD DE ALTA DE EXPERIENCIA EDUCATIVA",
+            datos_alumno=self.datos,
+            tramite="Alta de experiencia educativa",
+            materia=materia
+        )
+
         if self.asistente:
-            self.asistente.hablar(f"Materia {materia} dada de alta.")
-        print(f"Materia dada de alta: {materia}")
-        # Aquí podrías luego navegar a otra pantalla o guardar en BD
+            self.asistente.hablar(
+                f"Materia {materia} dada de alta. "
+                "Tu comprobante PDF ha sido generado."
+            )
+
+        # Regresar al menú principal
+        self.root.after(2000, self.volver_menu)
+
+    # ======================================================
+    # VOLVER A MENÚ
+    # ======================================================
+    def volver_menu(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        TramitesUI(self.root, lambda *args: None, self.datos)

@@ -42,27 +42,22 @@ class TituloUI:
         )
         datos_alumno.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-        tk.Label(
-            datos_alumno,
-            text=f"Nombre:\n  {self.datos['nombre']}",
-            bg="white", font=("Arial", 12)
-        ).pack(anchor="w", pady=5)
+        tk.Label(datos_alumno,
+                 text=f"Nombre:\n  {self.datos['nombre']}",
+                 bg="white", font=("Arial", 12)).pack(anchor="w")
 
-        tk.Label(
-            datos_alumno,
-            text=f"Matrícula:\n  {self.datos['matricula']}",
-            bg="white", font=("Arial", 12)
-        ).pack(anchor="w", pady=5)
+        tk.Label(datos_alumno,
+                 text=f"Matrícula:\n  {self.datos['matricula']}",
+                 bg="white", font=("Arial", 12)).pack(anchor="w")
 
-        tk.Label(
-            datos_alumno,
-            text=f"Carrera:\n  {self.datos['carrera']}",
-            bg="white", font=("Arial", 12)
-        ).pack(anchor="w", pady=5)
+        tk.Label(datos_alumno,
+                 text=f"Carrera:\n  {self.datos['carrera']}",
+                 bg="white", font=("Arial", 12)).pack(anchor="w")
 
         # ---------- MATERIAS ----------
         frame_materias = tk.LabelFrame(
-            contenido, text="Selecciona la materia del título de suficiencia",
+            contenido,
+            text="Selecciona la materia del título de suficiencia",
             bg="white", font=("Arial", 14, "bold"),
             padx=10, pady=10
         )
@@ -80,14 +75,14 @@ class TituloUI:
                 font=("Arial", 12),
                 anchor="w",
                 command=self.on_materia
-            ).pack(anchor="w", pady=3)
+            ).pack(anchor="w")
 
         self.info = tk.Label(
             frame_materias,
             text="Puedes seleccionar con clic o por voz.\nDi: 'título en ___'.",
             bg="white", fg="gray", font=("Arial", 10)
         )
-        self.info.pack(anchor="w", pady=5)
+        self.info.pack(anchor="w")
 
         # ---------- BOTÓN ----------
         tk.Button(
@@ -102,7 +97,7 @@ class TituloUI:
         self.transcripcion_lbl = tk.Label(
             frame, text="", bg="white", fg="gray", font=("Arial", 11)
         )
-        self.transcripcion_lbl.pack(pady=5)
+        self.transcripcion_lbl.pack()
 
         # ---------- ASISTENTE ----------
         if self.asistente:
@@ -131,7 +126,6 @@ class TituloUI:
     def procesar_comando(self, texto):
         t = texto.lower()
 
-        # Detectar materia por voz
         for m in self.datos["materias"]:
             if m["nombre"].lower().split()[0] in t:
                 self.materia_var.set(m["nombre"])
@@ -157,10 +151,14 @@ class TituloUI:
             self.asistente.hablar("Selecciona una materia primero.")
             return
 
+        try:
+            self.asistente.detener()
+        except:
+            pass
+
         materia = self.materia_var.get()
         tramite = "Título de Suficiencia"
 
-        # Generar PDF
         archivo = generar_pdf(
             nombre_archivo=f"titulo_{self.datos['matricula']}.pdf",
             titulo="SOLICITUD DE TÍTULO DE SUFICIENCIA",
@@ -174,11 +172,11 @@ class TituloUI:
             "Tu comprobante en PDF ha sido generado."
         )
 
-        # Regresar al menú principal
         self.root.after(2000, self.volver_menu)
 
     # ====================================================
     def volver_menu(self):
         for widget in self.root.winfo_children():
             widget.destroy()
+
         TramitesUI(self.root, lambda *args: None, self.datos)

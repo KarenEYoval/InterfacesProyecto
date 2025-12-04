@@ -1,56 +1,77 @@
 import tkinter as tk
+
 from ui_login import LoginUI
 from ui_tramites import TramitesUI
-from ui_solicitud import SolicitudUI   # ← importar nueva pantalla
+from ui_solicitud import SolicitudUI
+from ui_baja import BajaMateriaUI
+from ui_extraordinario import ExtraordinarioUI
+from ui_titulo import TituloUI
 
 
+# ---------------------------------------------------
+#     INICIALIZAR APLICACIÓN
+# ---------------------------------------------------
 root = tk.Tk()
-root.title("Sistema de Trámites")
-
-def centrar_ventana(root, ancho=500, alto=500):
-    root.update_idletasks()
-    x = (root.winfo_screenwidth() // 2) - (ancho // 2)
-    y = (root.winfo_screenheight() // 2) - (alto // 2)
-    root.geometry(f"{ancho}x{alto}+{x}+{y}")
-
-    
-    root.geometry("1200x720")
-    root.minsize(1200, 720)
+root.title("Sistema de Trámites Escolares")
+root.geometry("1200x720")
+root.minsize(1200, 720)
 
 
-# ----------------------------------------------
-# NAVEGACIÓN ENTRE PANTALLAS
-# ----------------------------------------------
-def navegar(destino, datos=None):
+# ---------------------------------------------------
+#     NAVEGACIÓN ENTRE PANTALLAS
+# ---------------------------------------------------
+def navegar(destino, datos_usuario=None):
 
-    # limpiar pantalla
+    # limpiar ventana actual
     for widget in root.winfo_children():
         widget.destroy()
 
-    if destino == "tramites":
-        TramitesUI(root, navegar, datos)
+    # -------- LOGIN ------------
+    if destino == "login":
+        LoginUI(root, callback_login=mostrar_tramites)
 
-    elif destino == "solicitud":
-        SolicitudUI(root, datos)
+    # -------- TRÁMITES ---------
+    elif destino == "tramites":
+        TramitesUI(root, navegar, datos_usuario)
 
-    elif destino == "inicio":
-        LoginUI(root, callback_login=mostrar_pantalla_tramites)
+    # -------- ALTA DE MATERIA ---------
+    elif destino == "Alta de experiencia educativa":
+        SolicitudUI(root, datos_usuario)
+
+    # -------- BAJA DE MATERIA ---------
+    elif destino == "Baja de experiencia educativa":
+        BajaMateriaUI(root, datos_usuario)
+
+    # -------- EXTRAORDINARIO ---------
+    elif destino == "Examen extraordinario":
+        ExtraordinarioUI(root, datos_usuario)
+
+    # -------- TÍTULO DE SUFICIENCIA ---------
+    elif destino == "Título de suficiencia":
+        TituloUI(root, datos_usuario)
+
+    else:
+        print("⚠ Trámite desconocido:", destino)
 
 
-# ----------------------------------------------
-# LOGIN → TRÁMITES
-# ----------------------------------------------
-def mostrar_pantalla_tramites(datos_usuario, rol):
+# ---------------------------------------------------
+#      LOGIN → TRÁMITES
+# ---------------------------------------------------
+def mostrar_tramites(datos_usuario, rol):
+
     # detener asistente del login
     if hasattr(root, "asistente"):
-        root.asistente.detener()
+        try:
+            root.asistente.detener()
+        except:
+            pass
 
     navegar("tramites", datos_usuario)
 
 
-# ----------------------------------------------
-# INICIAR LOGIN
-# ----------------------------------------------
-LoginUI(root, callback_login=mostrar_pantalla_tramites)
+# ---------------------------------------------------
+#      INICIAR PRIMERA PANTALLA (LOGIN)
+# ---------------------------------------------------
+LoginUI(root, callback_login=mostrar_tramites)
 
 root.mainloop()

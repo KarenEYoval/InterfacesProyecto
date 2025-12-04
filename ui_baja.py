@@ -1,4 +1,6 @@
 import tkinter as tk
+from utilidades_pdf import generar_pdf
+from ui_tramites import TramitesUI
 
 
 class BajaMateriaUI:
@@ -185,15 +187,12 @@ class BajaMateriaUI:
         self.asistente.hablar(mensaje)
         self.asistente.activar()
 
-    # =====================================================
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
-    # =====================================================
     def procesar_comando(self, texto):
         t = texto.lower()
 
-        # Intentar seleccionar por voz
         for materia in self.datos["materias"]:
             nombre = materia["nombre"].lower()
             if nombre.split()[0] in t or nombre in t:
@@ -201,11 +200,9 @@ class BajaMateriaUI:
                 self.on_seleccionar_materia()
                 return
 
-        # Confirmar baja
         if "siguiente" in t or "continuar" in t:
             self.confirmar_baja()
 
-    # =====================================================
     def on_seleccionar_materia(self):
         self.materia_seleccionada = self.materia_var.get()
         if self.asistente:
@@ -213,18 +210,36 @@ class BajaMateriaUI:
                 f"Has seleccionado dar de baja {self.materia_seleccionada}."
             )
 
-    # =====================================================
+    # ====================== CONFIRMAR ======================
     def confirmar_baja(self):
         materia = self.materia_var.get()
 
         if not materia:
-            if self.asistente:
-                self.asistente.hablar(
-                    "Por favor selecciona qué materia deseas dar de baja."
-                )
+            self.asistente.hablar("Selecciona una materia primero.")
             return
 
-        if self.asistente:
-            self.asistente.hablar(f"Materia {materia} dada de baja correctamente.")
+        # 🔵 Detener asistente antes de cambiar
+        try:
+            self.asistente.detener()
+        except:
+            pass
 
-        print(f"Materia dada de baja: {materia}")
+        # Generar PDF
+        generar_pdf(
+            nombre_archivo=f"baja_{self.datos['matricula']}.pdf",
+            titulo="SOLICITUD DE BAJA DE EXPERIENCIA EDUCATIVA",
+            datos_alumno=self.datos,
+            tramite="Baja de experiencia educativa",
+            materia=materia
+        )
+
+        self.asistente.hablar("Baja registrada. Generando comprobante.")
+
+        self.root.after(1500, self.volver_menu)
+
+    # ====================== VOLVER MENÚ ======================
+    def volver_menu(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        TramitesUI(self.root, lambda *args: None, self.datos)

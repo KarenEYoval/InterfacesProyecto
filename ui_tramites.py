@@ -1,20 +1,16 @@
 import tkinter as tk
-from tkinter import ttk
 from utilidades import centrar_ventana
-
 
 
 class TramitesUI:
     def __init__(self, root, callback_navegar, datos_usuario):
         self.datos_usuario = datos_usuario
         self.root = root
-        centrar_ventana(root, 500, 500)
         self.callback_navegar = callback_navegar
 
+        centrar_ventana(root, 1000, 650)
         root.title("Gestión de trámites")
-        root.geometry("1000x650")
         root.config(bg="#f4f4f4")
-        
 
         self.frame = tk.Frame(root, bg="white")
         self.frame.pack(fill="both", expand=True)
@@ -28,12 +24,10 @@ class TramitesUI:
 
         self.construir_ui()
         root.after(800, self.iniciar_asistente)
-        
 
-
-    #=========================================================
+    # =========================================================
     # UI
-    #=========================================================
+    # =========================================================
     def construir_ui(self):
         barra = tk.Frame(self.frame, bg="#0057A3", height=80)
         barra.pack(fill="x")
@@ -52,7 +46,7 @@ class TramitesUI:
         ).pack(pady=20)
 
         # ------------------------------------------------------
-        # BOTONES DE TRÁMITES (NO COMBOBOX)
+        # BOTONES DE TRÁMITES
         # ------------------------------------------------------
         botones_frame = tk.Frame(contenido, bg="white")
         botones_frame.pack(pady=20)
@@ -74,8 +68,10 @@ class TramitesUI:
         # ------------------------------------------------------
         # REQUISITOS
         # ------------------------------------------------------
-        tk.Label(contenido, text="Requisitos",
-                 font=("Arial", 20, "bold"), bg="white").pack(pady=(20, 5))
+        tk.Label(
+            contenido, text="Requisitos",
+            font=("Arial", 20, "bold"), bg="white"
+        ).pack(pady=(20, 5))
 
         self.lista_req = tk.Frame(contenido, bg="white")
         self.lista_req.pack()
@@ -96,9 +92,9 @@ class TramitesUI:
         )
         self.transcripcion_lbl.pack()
 
-    #=========================================================
+    # =========================================================
     # ASISTENTE
-    #=========================================================
+    # =========================================================
     def iniciar_asistente(self):
         self.asistente.detener()
         mensaje = (
@@ -113,9 +109,9 @@ class TramitesUI:
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
-    #=========================================================
+    # =========================================================
     # PROCESAR COMANDOS POR VOZ
-    #=========================================================
+    # =========================================================
     def procesar_comando(self, texto):
         t = texto.lower()
 
@@ -135,9 +131,9 @@ class TramitesUI:
         if "siguiente" in t or "continuar" in t:
             self.avanzar_siguiente_pantalla()
 
-    #=========================================================
+    # =========================================================
     # SELECCIÓN DE TRÁMITE
-    #=========================================================
+    # =========================================================
     def seleccionar_tramite(self, tramite):
         self.tramite_seleccionado = tramite
         self.asistente.hablar(f"Trámite seleccionado: {tramite}.")
@@ -171,9 +167,9 @@ class TramitesUI:
         mensaje = f"Los requisitos para {tramite} son: " + ", ".join(reqs[tramite])
         self.asistente.hablar(mensaje)
 
-    #=========================================================
-    # ACTUALIZAR REQUISITOS EN PANTALLA
-    #=========================================================
+    # =========================================================
+    # MOSTRAR REQUISITOS EN PANTALLA
+    # =========================================================
     def actualizar_requisitos(self, tramite):
         for w in self.lista_req.winfo_children():
             w.destroy()
@@ -206,19 +202,36 @@ class TramitesUI:
         for r in lista:
             fila = tk.Frame(self.lista_req, bg="white")
             fila.pack(anchor="w")
+
             tk.Label(fila, text="●", fg="gray", bg="white",
                      font=("Arial", 14)).pack(side="left")
             tk.Label(fila, text=r, bg="white",
                      font=("Arial", 14)).pack(side="left")
 
-    #=========================================================
+    # =========================================================
     # SIGUIENTE PANTALLA
-    #=========================================================
+    # =========================================================
     def avanzar_siguiente_pantalla(self):
         if not self.tramite_seleccionado:
-            self.asistente.hablar("Por favor selecciona un trámite antes de continuar.")
+            self.asistente.hablar(
+                "Por favor selecciona un trámite antes de continuar."
+            )
             return
 
-        self.asistente.hablar(f"Abriendo el formulario de {self.tramite_seleccionado}.")
-        self.callback_navegar("solicitud", self.datos_usuario)
+        # APAGAR ASISTENTE
+        try:
+            self.asistente.detener()
+        except:
+            pass
 
+        self.asistente.hablar(
+            f"Abriendo el formulario de {self.tramite_seleccionado}."
+        )
+
+        # NAVEGAR A LA SIGUIENTE PANTALLA
+        self.root.after(
+            300,
+            lambda: self.callback_navegar(
+                self.tramite_seleccionado, self.datos_usuario
+            )
+        )

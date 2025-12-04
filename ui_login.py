@@ -93,8 +93,8 @@ class LoginUI:
     # =====================================================
     def iniciar_asistente(self):
         mensaje = (
-            "Bienvenido al login. "
-            "Dime tu usuario y contraseña juntos. Por ejemplo: Karen uno dos tres."
+            "Bienvenida al login. "
+            "Dime tu usuario y contraseña juntos. Por ejemplo: oscar dos dos tres."
         )
         self.label_transcripcion.config(text=mensaje)
         self.asistente.hablar(mensaje)

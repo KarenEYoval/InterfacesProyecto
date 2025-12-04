@@ -149,6 +149,10 @@ class ExtraordinarioUI:
         if not self.materia_var.get():
             self.asistente.hablar("Selecciona una materia primero.")
             return
+        try:
+            self.asistente.detener()
+        except:
+            pass
 
         materia = self.materia_var.get()
         tramite = "Examen Extraordinario"
