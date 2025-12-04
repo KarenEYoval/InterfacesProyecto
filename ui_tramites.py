@@ -1,195 +1,179 @@
 import tkinter as tk
 from tkinter import ttk
-from Voz_Asistente import VozAsistente
+from utilidades import centrar_ventana
+
 
 
 class TramitesUI:
-    def __init__(self, root, callback_navegar):
+    def __init__(self, root, callback_navegar, datos_usuario):
+        self.datos_usuario = datos_usuario
         self.root = root
+        centrar_ventana(root, 500, 500)
         self.callback_navegar = callback_navegar
 
         root.title("Gestión de trámites")
         root.geometry("1000x650")
         root.config(bg="#f4f4f4")
+        
 
         self.frame = tk.Frame(root, bg="white")
         self.frame.pack(fill="both", expand=True)
 
-        # ✅ Reusar asistente del login
+        # Reusar asistente del login
         self.asistente = root.asistente
         self.asistente.callback_transcripcion = self.transcribir
         self.asistente.callback_comando = self.procesar_comando
 
+        self.tramite_seleccionado = None
+
         self.construir_ui()
-
-        # 🔥 Activar mensaje de bienvenida
         root.after(800, self.iniciar_asistente)
+        
 
-    # ---------------------- UI ----------------------
 
+    #=========================================================
+    # UI
+    #=========================================================
     def construir_ui(self):
         barra = tk.Frame(self.frame, bg="#0057A3", height=80)
         barra.pack(fill="x")
+
         tk.Label(
             barra, text="Gestión de trámites",
-            font=("Arial", 28, "bold"),
-            bg="#0057A3", fg="white"
+            font=("Arial", 28, "bold"), bg="#0057A3", fg="white"
         ).pack(pady=15)
 
-        # --- Menú lateral ---
-        menu = tk.Frame(self.frame, bg="white")
-        menu.pack(side="left", fill="y")
-
-        def boton(texto, destino):
-            return tk.Button(menu, text=texto, font=("Arial", 16),
-                             bg="#0DA24E", fg="white",
-                             activebackground="#0C8C42",
-                             width=15, height=4,
-                             command=lambda: self.navegar(destino))
-
-        boton("Inicio", "inicio").pack(fill="x")
-        boton("Estado de\ntrámites", "estado").pack(fill="x")
-        boton("Historial", "historial").pack(fill="x")
-
-        # --- Contenido principal ---
         contenido = tk.Frame(self.frame, bg="white")
-        contenido.pack(side="right", fill="both", expand=True, padx=40)
+        contenido.pack(fill="both", expand=True)
 
         tk.Label(
-            contenido, text="Solicitar trámite",
-            font=("Arial", 24, "bold"),
-            bg="white"
-        ).pack(anchor="w", pady=30)
+            contenido, text="Selecciona un trámite",
+            font=("Arial", 24, "bold"), bg="white"
+        ).pack(pady=20)
 
-        # --- Combo de trámites ---
-        self.combo = ttk.Combobox(
-            contenido,
-            state="readonly",
-            values=[
-                "Alta de experiencia educativa",
-                "Baja de experiencia educativa",
-                "Examen extraordinario",
-                "Título de suficiencia"
-            ],
-            font=("Arial", 12)
-        )
-        self.combo.set("Selecciona el tipo de trámite")
-        self.combo.pack(pady=10)
+        # ------------------------------------------------------
+        # BOTONES DE TRÁMITES (NO COMBOBOX)
+        # ------------------------------------------------------
+        botones_frame = tk.Frame(contenido, bg="white")
+        botones_frame.pack(pady=20)
 
-        # --- Requisitos ---
-        tk.Label(
-            contenido, text="Requisitos",
-            font=("Arial", 20, "bold"),
-            bg="white"
-        ).pack(anchor="w", pady=(30, 5))
+        def crear_boton(texto, valor):
+            return tk.Button(
+                botones_frame, text=texto,
+                font=("Arial", 16), width=28, height=2,
+                bg="#0DA24E", fg="white",
+                activebackground="#0C8C42",
+                command=lambda: self.seleccionar_tramite(valor)
+            )
+
+        crear_boton("Alta de experiencia educativa", "Alta de experiencia educativa").pack(pady=5)
+        crear_boton("Baja de experiencia educativa", "Baja de experiencia educativa").pack(pady=5)
+        crear_boton("Examen extraordinario", "Examen extraordinario").pack(pady=5)
+        crear_boton("Título de suficiencia", "Título de suficiencia").pack(pady=5)
+
+        # ------------------------------------------------------
+        # REQUISITOS
+        # ------------------------------------------------------
+        tk.Label(contenido, text="Requisitos",
+                 font=("Arial", 20, "bold"), bg="white").pack(pady=(20, 5))
 
         self.lista_req = tk.Frame(contenido, bg="white")
-        self.lista_req.pack(anchor="w")
+        self.lista_req.pack()
 
         self.actualizar_requisitos(None)
 
-        # --- Botón siguiente ---
+        # ------------------------------------------------------
         tk.Button(
             contenido, text="Siguiente",
-            font=("Arial", 14, "bold"),
-            bg="#0057A3", fg="white",
-            activebackground="#004A88",
-            padx=20, pady=6
-        ).pack(pady=40)
+            font=("Arial", 14, "bold"), bg="#0057A3",
+            fg="white", padx=20, pady=6,
+            command=self.avanzar_siguiente_pantalla
+        ).pack(pady=30)
 
-        # Transcripción
+        # TRANSCRIPCIÓN
         self.transcripcion_lbl = tk.Label(
-            contenido, text="",
-            fg="gray", bg="white",
-            font=("Arial", 12)
+            contenido, text="", fg="gray", bg="white", font=("Arial", 12)
         )
         self.transcripcion_lbl.pack()
 
-        tk.Button(
-            contenido, text="🎤 Iniciar asistente",
-            font=("Arial", 12),
-            bg="#0DA24E", fg="white",
-            command=self.asistente.activar
-        ).pack(pady=5)
-
-    # -------------------- ASISTENTE --------------------
-
+    #=========================================================
+    # ASISTENTE
+    #=========================================================
     def iniciar_asistente(self):
-
-        # 1️⃣ Detener escucha previa
-        try:
-            self.asistente.detener()
-        except:
-            pass
-
-        # 2️⃣ Mensaje de bienvenida
+        self.asistente.detener()
         mensaje = (
             "Bienvenido a la ventana de trámites. "
-            "¿Qué trámite deseas hacer? Puedes elegir: "
-            "examen extraordinario, examen título de suficiencia, "
-            "alta de experiencia educativa o baja de experiencia educativa."
+            "Las opciones disponibles son: alta de experiencia educativa, "
+            "baja de experiencia educativa, examen extraordinario "
+            "y título de suficiencia."
         )
-
-        # 3️⃣ Hablar primero (sin micrófono activo)
         self.asistente.hablar(mensaje)
-
-        # 4️⃣ Activar escucha después
-        self.root.after(2000, self.asistente.activar)
+        self.asistente.activar()
 
     def transcribir(self, texto):
         self.transcripcion_lbl.config(text=f"Escuchando: {texto}")
 
+    #=========================================================
+    # PROCESAR COMANDOS POR VOZ
+    #=========================================================
     def procesar_comando(self, texto):
-
         t = texto.lower()
 
-        # ---- Alta ----
         if "alta" in t:
-            tramite = "Alta de experiencia educativa"
-            self.combo.set(tramite)
-            self.asistente.hablar("Trámite seleccionado: alta de experiencia educativa.")
-            self.actualizar_requisitos(tramite)
+            self.seleccionar_tramite("Alta de experiencia educativa")
             return
-
-        # ---- Baja ----
         if "baja" in t:
-            tramite = "Baja de experiencia educativa"
-            self.combo.set(tramite)
-            self.asistente.hablar("Trámite seleccionado: baja de experiencia educativa.")
-            self.actualizar_requisitos(tramite)
+            self.seleccionar_tramite("Baja de experiencia educativa")
             return
-
-        # ---- Extraordinario ----
         if "extra" in t or "extraordinario" in t:
-            tramite = "Examen extraordinario"
-            self.combo.set(tramite)
-            self.asistente.hablar("Trámite seleccionado: examen extraordinario.")
-            self.actualizar_requisitos(tramite)
+            self.seleccionar_tramite("Examen extraordinario")
+            return
+        if "suficiencia" in t or "titulo" in t or "título" in t:
+            self.seleccionar_tramite("Título de suficiencia")
             return
 
-        # ---- Suficiencia ----
-        if "suficiencia" in t or "título" in t or "titulo" in t:
-            tramite = "Título de suficiencia"
-            self.combo.set(tramite)
-            self.asistente.hablar("Trámite seleccionado: título de suficiencia.")
-            self.actualizar_requisitos(tramite)
-            return
+        if "siguiente" in t or "continuar" in t:
+            self.avanzar_siguiente_pantalla()
 
-        # ---- Navegación ----
-        if "inicio" in t:
-            self.asistente.hablar("Regresando al inicio.")
-            self.navegar("inicio")
+    #=========================================================
+    # SELECCIÓN DE TRÁMITE
+    #=========================================================
+    def seleccionar_tramite(self, tramite):
+        self.tramite_seleccionado = tramite
+        self.asistente.hablar(f"Trámite seleccionado: {tramite}.")
+        self.actualizar_requisitos(tramite)
+        self.leer_requisitos(tramite)
 
-        if "estado" in t:
-            self.asistente.hablar("Mostrando estado de trámites.")
-            self.navegar("estado")
+    def leer_requisitos(self, tramite):
+        reqs = {
+            "Alta de experiencia educativa": [
+                "Formulario de alta firmado",
+                "Motivo de la alta",
+                "Constancia académica"
+            ],
+            "Baja de experiencia educativa": [
+                "Solicitud de baja",
+                "Motivo de la baja",
+                "Sin adeudos en la materia"
+            ],
+            "Examen extraordinario": [
+                "Pago del examen extraordinario",
+                "Identificación oficial",
+                "Registro de calificaciones"
+            ],
+            "Título de suficiencia": [
+                "Solicitud de título de suficiencia",
+                "Pago correspondiente",
+                "Historial académico vigente"
+            ],
+        }
 
-        if "historial" in t:
-            self.asistente.hablar("Abriendo historial.")
-            self.navegar("historial")
+        mensaje = f"Los requisitos para {tramite} son: " + ", ".join(reqs[tramite])
+        self.asistente.hablar(mensaje)
 
-    # ------------------ REQUISITOS ------------------
-
+    #=========================================================
+    # ACTUALIZAR REQUISITOS EN PANTALLA
+    #=========================================================
     def actualizar_requisitos(self, tramite):
         for w in self.lista_req.winfo_children():
             w.destroy()
@@ -227,7 +211,14 @@ class TramitesUI:
             tk.Label(fila, text=r, bg="white",
                      font=("Arial", 14)).pack(side="left")
 
-    # ------------------ NAVEGACIÓN ------------------
+    #=========================================================
+    # SIGUIENTE PANTALLA
+    #=========================================================
+    def avanzar_siguiente_pantalla(self):
+        if not self.tramite_seleccionado:
+            self.asistente.hablar("Por favor selecciona un trámite antes de continuar.")
+            return
 
-    def navegar(self, destino):
-        self.callback_navegar(destino)
+        self.asistente.hablar(f"Abriendo el formulario de {self.tramite_seleccionado}.")
+        self.callback_navegar("solicitud", self.datos_usuario)
+
